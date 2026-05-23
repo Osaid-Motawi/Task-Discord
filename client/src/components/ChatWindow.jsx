@@ -87,7 +87,10 @@ const ChatWindow = ({ selectedChannel }) => {
 
       setMessages((prev) => [...prev, res.data]);
 
-      socket.emit('send_message', res.data);
+      socket.emit('send_message', {
+  ...res.data,
+  channelId: selectedChannel._id
+});
 
     } catch (err) {
       console.error('Failed to save message');

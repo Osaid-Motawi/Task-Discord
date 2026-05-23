@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { io } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
 import {
   FiHash,
@@ -8,7 +9,7 @@ import {
   FiLogOut,
   FiMessageSquare
 } from 'react-icons/fi';
-
+const socket = io('http://localhost:5000');
 const Sidebar = ({ onSelectChannel, selectedChannel }) => {
   const [channels, setChannels] = useState([]);
   const [newChannel, setNewChannel] = useState('');
@@ -17,8 +18,38 @@ const Sidebar = ({ onSelectChannel, selectedChannel }) => {
   const [error, setError] = useState('');
   const { user, token, logout } = useAuth();
 
-  useEffect(() => { fetchChannels(); }, []);
+useEffect(() => {
 
+  fetchChannels();
+
+  socket.on('channel_created', (channel) => {
+    setChannels((prev) => {
+
+      const exists = prev.find((c) => c._id === channel._id);
+
+      if (exists) return prev;
+
+      return [...prev, channel];
+    });
+  });
+
+  socket.on('channel_deleted', (channelId) => {
+
+    setChannels((prev) =>
+      prev.filter((c) => c._id !== channelId)
+    );
+
+    if (selectedChannel?._id === channelId) {
+      onSelectChannel(null);
+    }
+  });
+
+  return () => {
+    socket.off('channel_created');
+    socket.off('channel_deleted');
+  };
+
+}, []);
   const fetchChannels = async () => {
     try {
       const res = await axios.get('http://localhost:5000/api/channels', {
@@ -41,7 +72,7 @@ const Sidebar = ({ onSelectChannel, selectedChannel }) => {
         { name: newChannel.trim().toLowerCase().replace(/\s+/g, '-') },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setChannels([...channels, res.data]);
+      socket.emit('create_channel', res.data);
       setNewChannel('');
       setShowInput(false);
     } catch (err) {
@@ -56,6 +87,7 @@ const Sidebar = ({ onSelectChannel, selectedChannel }) => {
       await axios.delete(`http://localhost:5000/api/channels/${channelId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      socket.emit('delete_channel', channelId);
       const updated = channels.filter((c) => c._id !== channelId);
       setChannels(updated);
       if (selectedChannel?._id === channelId) {

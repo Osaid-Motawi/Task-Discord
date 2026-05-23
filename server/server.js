@@ -48,6 +48,13 @@ io.on('connection', (socket) => {
   socket.on('edit_message', ({ updated, channelId }) => {
     io.to(channelId).emit('message_edited', updated);
   });
+  socket.on('create_channel', (channel) => {
+  io.emit('channel_created', channel);
+});
+
+socket.on('delete_channel', (channelId) => {
+  io.emit('channel_deleted', channelId);
+});
 
   socket.on('disconnect', () => {
     console.log('🔴 User disconnected:', socket.id);
