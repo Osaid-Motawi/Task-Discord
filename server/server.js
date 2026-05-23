@@ -27,11 +27,11 @@ app.use('/api/channels', channelRoutes);
 app.use('/api/messages', messageRoutes);
 
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('✅ MongoDB Connected'))
-  .catch((err) => console.log('❌ MongoDB Error:', err));
+  .then(() => console.log(' MongoDB Connected'))
+  .catch((err) => console.log(' MongoDB Error:', err));
 
 io.on('connection', (socket) => {
-  console.log('🟢 User connected:', socket.id);
+  console.log(' User connected:', socket.id);
 
   socket.on('join_channel', (channelId) => {
     socket.join(channelId);
@@ -57,9 +57,9 @@ socket.on('delete_channel', (channelId) => {
 });
 
   socket.on('disconnect', () => {
-    console.log('🔴 User disconnected:', socket.id);
+    console.log(' User disconnected:', socket.id);
   });
 });
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(` Server running on port ${PORT}`));
