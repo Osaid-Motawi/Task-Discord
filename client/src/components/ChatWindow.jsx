@@ -13,15 +13,23 @@ import {
 const socket = io('http://localhost:5000');
 
 const ChatWindow = ({ selectedChannel }) => {
-  const [messages, setMessages]     = useState([]);
-  const [editingId, setEditingId]   = useState(null);
+  const [messages, setMessages]       = useState([]);
+  const [editingId, setEditingId]     = useState(null);
   const [editContent, setEditContent] = useState('');
-  const [hoveredId, setHoveredId]   = useState(null);
+  const [hoveredId, setHoveredId]     = useState(null);
   const { token, user } = useAuth();
   const bottomRef = useRef(null);
 
   useEffect(() => {
     if (!selectedChannel) return;
+
+    setMessages([]);
+    setHoveredId(null);
+    setEditingId(null);
+
+    socket.off('receive_message');
+    socket.off('message_deleted');
+    socket.off('message_edited');
 
     socket.emit('join_channel', selectedChannel._id);
 
@@ -40,7 +48,11 @@ const ChatWindow = ({ selectedChannel }) => {
     fetchMessages();
 
     socket.on('receive_message', (msg) => {
-      setMessages((prev) => [...prev, msg]);
+      setMessages((prev) => {
+        if (prev.find((m) => m._id === msg._id)) return prev;
+        return [...prev, msg];
+      });
+      setHoveredId(null);
     });
 
     socket.on('message_deleted', (id) => {
@@ -66,41 +78,39 @@ const ChatWindow = ({ selectedChannel }) => {
 
   const handleSend = async (content) => {
     if (!content.trim() || !selectedChannel) return;
-
-    const messageData = {
-      content,
-      channelId: selectedChannel._id,
-      sender: { _id: user.id, username: user.username },
-      createdAt: new Date().toISOString(),
-    };
-
-    socket.emit('send_message', messageData);
-
     try {
-      await axios.post(
+      const res = await axios.post(
         'http://localhost:5000/api/messages',
         { content, channelId: selectedChannel._id },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
+      setMessages((prev) => [...prev, res.data]);
+
+      socket.emit('send_message', res.data);
+
     } catch (err) {
       console.error('Failed to save message');
     }
   };
 
-  const handleDelete = async (msgId) => {
-    try {
-      await axios.delete(`http://localhost:5000/api/messages/${msgId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      socket.emit('delete_message', {
-        msgId,
-        channelId: selectedChannel._id,
-      });
-      setMessages((prev) => prev.filter((m) => m._id !== msgId));
-    } catch (err) {
-      console.error('Failed to delete message');
-    }
-  };
+const handleDelete = async (msgId) => {
+  const confirmed = window.confirm('Are you sure you want to delete this message?');
+  if (!confirmed) return;
+
+  try {
+    await axios.delete(`http://localhost:5000/api/messages/${msgId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    socket.emit('delete_message', {
+      msgId,
+      channelId: selectedChannel._id,
+    });
+    setMessages((prev) => prev.filter((m) => m._id !== msgId));
+  } catch (err) {
+    console.error('Failed to delete message');
+  }
+};
 
   const handleEditSubmit = async (msgId) => {
     if (!editContent.trim()) return;
@@ -124,15 +134,8 @@ const ChatWindow = ({ selectedChannel }) => {
     }
   };
 
-  const startEdit = (msg) => {
-    setEditingId(msg._id);
-    setEditContent(msg.content);
-  };
-
-  const cancelEdit = () => {
-    setEditingId(null);
-    setEditContent('');
-  };
+  const startEdit  = (msg) => { setEditingId(msg._id); setEditContent(msg.content); };
+  const cancelEdit = ()    => { setEditingId(null);    setEditContent(''); };
 
   if (!selectedChannel) {
     return (
@@ -142,8 +145,10 @@ const ChatWindow = ({ selectedChannel }) => {
       </div>
     );
   }
+
   return (
     <div className="chat-window">
+
       <div className="chat-header">
         <FiHash size={18} />
         <span className="chat-header-name">{selectedChannel.name}</span>
@@ -157,9 +162,9 @@ const ChatWindow = ({ selectedChannel }) => {
           </div>
         )}
 
-        {messages.map((msg, index) => (
+        {messages.map((msg) => (
           <div
-            key={msg._id || index}
+            key={msg._id}
             className={`message ${msg.sender?.username === user.username ? 'own' : ''}`}
             onMouseEnter={() => setHoveredId(msg._id)}
             onMouseLeave={() => setHoveredId(null)}
@@ -167,6 +172,7 @@ const ChatWindow = ({ selectedChannel }) => {
             <div className="message-avatar">
               {msg.sender?.username?.[0].toUpperCase()}
             </div>
+
             <div className="message-body">
               <div className="message-meta">
                 <span className="message-author">{msg.sender?.username}</span>
@@ -178,6 +184,7 @@ const ChatWindow = ({ selectedChannel }) => {
                 </span>
                 {msg.edited && <span className="edited-tag">(edited)</span>}
               </div>
+
               {editingId === msg._id ? (
                 <div className="edit-form">
                   <input
@@ -185,41 +192,51 @@ const ChatWindow = ({ selectedChannel }) => {
                     value={editContent}
                     onChange={(e) => setEditContent(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleEditSubmit(msg._id);
+                      if (e.key === 'Enter')  handleEditSubmit(msg._id);
                       if (e.key === 'Escape') cancelEdit();
                     }}
                     autoFocus
                   />
                   <div className="edit-actions">
                     <button className="edit-save"
-                      onClick={() => handleEditSubmit(msg._id)}>Save</button>
-                    <button className="edit-cancel" onClick={cancelEdit}>Cancel</button>
+                      onClick={() => handleEditSubmit(msg._id)}>
+                      Save
+                    </button>
+                    <button className="edit-cancel" onClick={cancelEdit}>
+                      Cancel
+                    </button>
                   </div>
                 </div>
               ) : (
                 <p className="message-content">{msg.content}</p>
               )}
             </div>
+
             {msg.sender?.username === user.username
+              && msg._id
               && hoveredId === msg._id
               && editingId !== msg._id && (
               <div className="message-actions">
                 <button
                   className="action-btn edit"
                   onClick={() => startEdit(msg)}
-                  title="Edit">
-                  <FiEdit2 size={13} /> Edit </button>
+                >
+                  <FiEdit2 size={13} /> Edit
+                </button>
                 <button
                   className="action-btn delete"
                   onClick={() => handleDelete(msg._id)}
-                  title="Delete">
-                  <FiTrash2 size={13} /> Delete </button>
+                >
+                  <FiTrash2 size={13} /> Delete
+                </button>
               </div>
             )}
           </div>
         ))}
+
         <div ref={bottomRef} />
       </div>
+
       <MessageInput
         onSend={handleSend}
         channelName={selectedChannel.name}

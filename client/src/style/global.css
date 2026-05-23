@@ -1,41 +1,48 @@
-@import url('https://fonts.googleapis.com/css2?family=gg+Sans:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
 
 /* ─── VARIABLES ─────────────────────────────── */
 :root {
-  --bg-1: #0e0f13;
-  --bg-2: #161820;
-  --bg-3: #1c1e26;
-  --bg-4: #22252f;
-  --bg-5: #2a2d3a;
+  --bg-1: #0a0a0f;
+  --bg-2: #0f0f1a;
+  --bg-3: #141425;
+  --bg-4: #1a1a2e;
+  --bg-5: #1f1f3a;
 
-  --accent:       #5865f2;
-  --accent-hover: #4752c4;
-  --accent-glow:  rgba(88, 101, 242, 0.25);
-  --accent-soft:  rgba(88, 101, 242, 0.12);
+  --accent:        #7c3aed;
+  --accent-2:      #a855f7;
+  --accent-hover:  #6d28d9;
+  --accent-soft:   rgba(124, 58, 237, 0.15);
+  --accent-glow:   rgba(124, 58, 237, 0.4);
 
-  --green:      #3ba55c;
-  --green-soft: rgba(59, 165, 92, 0.15);
-  --red:        #ed4245;
-  --red-soft:   rgba(237, 66, 69, 0.15);
-  --yellow:     #faa61a;
+  --grad-1: linear-gradient(135deg, #7c3aed, #a855f7);
+  --grad-2: linear-gradient(135deg, #6d28d9, #7c3aed);
+  --grad-text: linear-gradient(135deg, #a78bfa, #e879f9);
 
-  --text-1: #f2f3f5;
-  --text-2: #b5bac1;
-  --text-3: #6d6f78;
-  --text-4: #3f4147;
+  --green:      #10b981;
+  --green-soft: rgba(16, 185, 129, 0.15);
+  --red:        #ef4444;
+  --red-soft:   rgba(239, 68, 68, 0.15);
+  --yellow:     #f59e0b;
 
-  --border:       rgba(255,255,255,0.06);
-  --border-focus: rgba(88,101,242,0.7);
+  --text-1: #f1f0ff;
+  --text-2: #a09cbc;
+  --text-3: #6b6785;
+  --text-4: #3d3a52;
 
-  --r-sm: 4px;
-  --r-md: 8px;
-  --r-lg: 12px;
-  --r-xl: 16px;
+  --border:       rgba(124, 58, 237, 0.12);
+  --border-focus: rgba(124, 58, 237, 0.7);
+  --border-card:  rgba(255, 255, 255, 0.06);
 
-  --shadow-sm: 0 1px 4px rgba(0,0,0,0.3);
-  --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
-  --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
-  --shadow-accent: 0 0 16px rgba(88,101,242,0.4);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+
+  --shadow-sm:     0 2px 8px rgba(0,0,0,0.4);
+  --shadow-md:     0 4px 20px rgba(0,0,0,0.5);
+  --shadow-lg:     0 8px 40px rgba(0,0,0,0.6);
+  --shadow-accent: 0 0 24px rgba(124,58,237,0.4);
+  --shadow-glow:   0 0 40px rgba(124,58,237,0.2);
 }
 
 /* ─── RESET ─────────────────────────────────── */
@@ -61,7 +68,7 @@ body {
   background: var(--bg-5);
   border-radius: 99px;
 }
-::-webkit-scrollbar-thumb:hover { background: var(--text-4); }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
 /* ─── LAYOUT ────────────────────────────────── */
 .app-layout {
@@ -72,16 +79,27 @@ body {
 
 /* ─── ANIMATIONS ────────────────────────────── */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-6px); }
+  from { opacity: 0; transform: translateY(-8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(28px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 @keyframes msgIn {
-  from { opacity: 0; transform: translateX(-6px); }
+  from { opacity: 0; transform: translateX(-8px); }
   to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(124,58,237,0.4); }
+  50%       { box-shadow: 0 0 0 6px rgba(124,58,237,0); }
+}
+
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
